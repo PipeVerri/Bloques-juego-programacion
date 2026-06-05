@@ -9,6 +9,16 @@ public class Piece : MonoBehaviour,
     [SerializeField] List<Sprite> sprites;
     List<int> rotationAngles = new() { 0, 90, 180, 270 };
 
+    int[,] currentShape;
+    Sprite currentSprite;
+    Board.CellType currentType;
+    Board board;
+
+    void Awake()
+    {
+        board = FindFirstObjectByType<Board>();
+    }
+
     // static shares it accross instances, readonly stops me from accidental edits
     List<int[,]> Shapes = new() {
         // I
@@ -107,25 +117,17 @@ public class Piece : MonoBehaviour,
         return rotated;
     }
 
-    void LogShape(int[,] shape)
-    {
-        string output = "";
-
-        for (int y = 0; y < shape.GetLength(0); y++)
-        {
-            for (int x = 0; x < shape.GetLength(1); x++)
-            {
-                output += shape[y, x] + " ";
-            }
-
-            output += "\n";
-        }
-
-        Debug.Log(output);
-    }
-
     private void ApplyShape(int[,] shape, Sprite sprite)
     {
+        currentShape = shape;
+        currentSprite = sprite;
+
+        // Map sprite to CellType
+        if (sprite.name.Contains("red")) currentType = Board.CellType.Red;
+        else if (sprite.name.Contains("green")) currentType = Board.CellType.Green;
+        else if (sprite.name.Contains("blue")) currentType = Board.CellType.Blue;
+        else currentType = Board.CellType.Empty;
+
         for (int y = 0; y < 4; y++)
         {
             for (int x = 0; x < 4; x++)
@@ -164,9 +166,16 @@ public class Piece : MonoBehaviour,
                         transform.parent);
 
         dragClone = cloneObj.GetComponent<Piece>();
+        dragClone.currentShape = currentShape;
+        dragClone.currentSprite = currentSprite;
+        dragClone.currentType = currentType;
+        dragClone.board = board;
 
         dragClone.transform.position =
             transform.position;
+        
+        // Hide original while dragging
+        GetComponent<CanvasGroup>().alpha = 0f;
     }
 
     public void OnDrag(PointerEventData eventData)
@@ -175,14 +184,64 @@ public class Piece : MonoBehaviour,
         {
             dragClone.transform.position =
                 eventData.position;
+
+            if (board != null && board.GetGridPosition(eventData.position, out int gx, out int gy))
+            {
+                if (board.IsValidPlacement(currentShape, gx, gy))
+                {
+                    board.ShowPreview(currentShape, gx, gy, currentType);
+                    // Optionally hide the drag clone or make it more transparent
+                    dragClone.GetComponent<CanvasGroup>().alpha = 0.5f;
+                }
+                else
+                {
+                    board.ClearPreview();
+                    board.Render();
+                    dragClone.GetComponent<CanvasGroup>().alpha = 1f;
+                }
+            }
+            else
+            {
+                if (board != null)
+                {
+                    board.ClearPreview();
+                    board.Render();
+                }
+                dragClone.GetComponent<CanvasGroup>().alpha = 1f;
+            }
         }
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        bool placed = false;
         if (dragClone != null)
         {
+            if (board != null && board.GetGridPosition(eventData.position, out int gx, out int gy))
+            {
+                if (board.IsValidPlacement(currentShape, gx, gy))
+                {
+                    board.PlacePiece(currentShape, gx, gy, currentType);
+                    placed = true;
+                }
+            }
             Destroy(dragClone.gameObject);
+        }
+
+        if (placed)
+        {
+            // If placed, we could either destroy this original piece or reset it
+            Destroy(gameObject);
+        }
+        else
+        {
+            // Reset visibility if not placed
+            GetComponent<CanvasGroup>().alpha = 1f;
+            if (board != null)
+            {
+                board.ClearPreview();
+                board.Render();
+            }
         }
     }
 }
