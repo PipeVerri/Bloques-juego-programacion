@@ -16,10 +16,12 @@ public class Board : MonoBehaviour
     private CellType[,] previewGrid = new CellType[8, 8];
     private RectTransform rectTransform;
     private int score = 0;
+    private GameManager gameManager;
 
     void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
+        gameManager = FindFirstObjectByType<GameManager>();
     }
 
     void Start()
@@ -31,11 +33,14 @@ public class Board : MonoBehaviour
 
     public void ClearBoard()
     {
+        score = 0;
+        UpdateScoreText();
         for (int y = 0; y < 8; y++)
             for (int x = 0; x < 8; x++)
                 grid[y, x] = CellType.Empty;
         
         ClearPreview();
+        Render();
     }
 
     public void ClearPreview()
@@ -56,8 +61,6 @@ public class Board : MonoBehaviour
         float width = rectTransform.rect.width;
         float height = rectTransform.rect.height;
 
-        // Calculate normalized position (0 to 1) relative to the bottom-left corner
-        // rectTransform.rect.min is the bottom-left corner in local coordinates
         float nx = (localPoint.x - rectTransform.rect.min.x) / width;
         float ny = (localPoint.y - rectTransform.rect.min.y) / height;
 
@@ -65,8 +68,6 @@ public class Board : MonoBehaviour
             return false;
 
         gridX = Mathf.FloorToInt(nx * 8);
-        // If your children are ordered top-to-bottom in the grid:
-        // (0,0) is top-left, so we invert Y
         gridY = 7 - Mathf.FloorToInt(ny * 8); 
 
         return true;
@@ -77,7 +78,6 @@ public class Board : MonoBehaviour
         int rows = shape.GetLength(0);
         int cols = shape.GetLength(1);
 
-        // Center the piece matrix on the mouse position
         startX -= cols / 2;
         startY -= rows / 2;
 
@@ -151,6 +151,7 @@ public class Board : MonoBehaviour
         ClearPreview();
         Render();
         CheckLines();
+        if (gameManager != null) gameManager.CheckGameOver();
     }
 
     private void CheckLines()
@@ -158,7 +159,6 @@ public class Board : MonoBehaviour
         List<int> fullRows = new List<int>();
         List<int> fullCols = new List<int>();
 
-        // Check rows
         for (int y = 0; y < 8; y++)
         {
             bool isFull = true;
@@ -173,7 +173,6 @@ public class Board : MonoBehaviour
             if (isFull) fullRows.Add(y);
         }
 
-        // Check columns
         for (int x = 0; x < 8; x++)
         {
             bool isFull = true;
@@ -188,7 +187,6 @@ public class Board : MonoBehaviour
             if (isFull) fullCols.Add(x);
         }
 
-        // Clear rows
         foreach (int y in fullRows)
         {
             for (int x = 0; x < 8; x++)
@@ -197,7 +195,6 @@ public class Board : MonoBehaviour
             }
         }
 
-        // Clear columns
         foreach (int x in fullCols)
         {
             for (int y = 0; y < 8; y++)
@@ -235,7 +232,6 @@ public class Board : MonoBehaviour
                 Image image = cellTransform.GetComponent<Image>();
                 if (image == null) continue;
 
-                // Priority to permanent grid, then preview
                 CellType cell = grid[y, x] != CellType.Empty ? grid[y, x] : previewGrid[y, x];
 
                 if (cell == CellType.Empty)
@@ -245,7 +241,6 @@ public class Board : MonoBehaviour
                 else
                 {
                     image.enabled = true;
-                    // Add transparency to preview
                     Color c = Color.white;
                     if (grid[y, x] == CellType.Empty && previewGrid[y, x] != CellType.Empty)
                         c.a = 0.5f;

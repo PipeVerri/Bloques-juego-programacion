@@ -140,6 +140,8 @@ public class Piece : MonoBehaviour,
         }
     }
     
+    public int[,] GetShape() => currentShape;
+
     public void SetRandomShape()
     {
         isPlaced = false;
