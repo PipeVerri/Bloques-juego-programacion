@@ -14,30 +14,30 @@ public class Piece : MonoBehaviour,
     Board.CellType currentType;
     Board board;
 
+    public bool isPlaced;
+    GameManager gameManager;
+
     void Awake()
     {
         board = FindFirstObjectByType<Board>();
+        gameManager = FindFirstObjectByType<GameManager>();
     }
 
-    // static shares it accross instances, readonly stops me from accidental edits
     List<int[,]> Shapes = new() {
         // I
         new int[,] { {1,1,1,1} },
-
         // O
         new int[,]
         {
             {1,1},
             {1,1}
         },
-
         // T
         new int[,]
         {
             {0,1,0},
             {1,1,1}
         },
-
         // L
         new int[,]
         {
@@ -45,7 +45,6 @@ public class Piece : MonoBehaviour,
             {1,0},
             {1,1}
         },
-
         // J
         new int[,]
         {
@@ -53,14 +52,12 @@ public class Piece : MonoBehaviour,
             {0,1},
             {1,1}
         },
-
         // S
         new int[,]
         {
             {0,1,1},
             {1,1,0}
         },
-
         // Z
         new int[,]
         {
@@ -106,7 +103,6 @@ public class Piece : MonoBehaviour,
         currentShape = shape;
         currentSprite = sprite;
 
-        // Map sprite to CellType
         if (sprite.name.Contains("red")) currentType = Board.CellType.Red;
         else if (sprite.name.Contains("green")) currentType = Board.CellType.Green;
         else if (sprite.name.Contains("blue")) currentType = Board.CellType.Blue;
@@ -115,17 +111,14 @@ public class Piece : MonoBehaviour,
         int rows = shape.GetLength(0);
         int cols = shape.GetLength(1);
 
-        // Calculate how to center the minimal shape in a 4x4 visual grid
         int startX = (4 - cols) / 2;
         int startY = (4 - rows) / 2;
 
-        // Reset all 16 children first
         for (int i = 0; i < transform.childCount; i++)
         {
             transform.GetChild(i).GetComponent<Image>().enabled = false;
         }
 
-        // Map the minimal shape to the 4x4 grid of children
         for (int y = 0; y < rows; y++)
         {
             for (int x = 0; x < cols; x++)
@@ -149,6 +142,10 @@ public class Piece : MonoBehaviour,
     
     public void SetRandomShape()
     {
+        isPlaced = false;
+        gameObject.SetActive(true);
+        GetComponent<CanvasGroup>().alpha = 1f;
+
         int[,] shape = Shapes[Random.Range(0, Shapes.Count)];
         int random_angle = rotationAngles[Random.Range(0, rotationAngles.Count)];
         shape = Rotate(shape, random_angle);
@@ -158,9 +155,7 @@ public class Piece : MonoBehaviour,
     Piece dragClone;
     public void OnBeginDrag(PointerEventData eventData)
     {
-        GameObject cloneObj =
-            Instantiate(gameObject,
-                        transform.parent);
+        GameObject cloneObj = Instantiate(gameObject, transform.parent);
 
         dragClone = cloneObj.GetComponent<Piece>();
         dragClone.currentShape = currentShape;
@@ -168,10 +163,7 @@ public class Piece : MonoBehaviour,
         dragClone.currentType = currentType;
         dragClone.board = board;
 
-        dragClone.transform.position =
-            transform.position;
-        
-        // Hide original while dragging
+        dragClone.transform.position = transform.position;
         GetComponent<CanvasGroup>().alpha = 0f; 
     }
 
@@ -179,15 +171,13 @@ public class Piece : MonoBehaviour,
     {
         if (dragClone != null)
         {
-            dragClone.transform.position =
-                eventData.position;
+            dragClone.transform.position = eventData.position;
 
             if (board != null && board.GetGridPosition(eventData.position, out int gx, out int gy))
             {
                 if (board.IsValidPlacement(currentShape, gx, gy))
                 {
                     board.ShowPreview(currentShape, gx, gy, currentType);
-                    // Optionally hide the drag clone or make it more transparent
                     dragClone.GetComponent<CanvasGroup>().alpha = 0.5f;
                 }
                 else
@@ -227,12 +217,12 @@ public class Piece : MonoBehaviour,
 
         if (placed)
         {
-            // If placed, we could either destroy this original piece or reset it
-            Destroy(gameObject);
+            isPlaced = true;
+            gameObject.SetActive(false);
+            if (gameManager != null) gameManager.CheckAllPiecesPlaced();
         }
         else
         {
-            // Reset visibility if not placed
             GetComponent<CanvasGroup>().alpha = 1f;
             if (board != null)
             {

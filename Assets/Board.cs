@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
+using System.Collections.Generic;
 
 public class Board : MonoBehaviour
 {
@@ -8,10 +10,12 @@ public class Board : MonoBehaviour
     [SerializeField] Sprite redSprite;
     [SerializeField] Sprite greenSprite;
     [SerializeField] Sprite blueSprite;
+    [SerializeField] TextMeshProUGUI scoreText;
 
     private CellType[,] grid = new CellType[8, 8];
     private CellType[,] previewGrid = new CellType[8, 8];
     private RectTransform rectTransform;
+    private int score = 0;
 
     void Awake()
     {
@@ -21,6 +25,7 @@ public class Board : MonoBehaviour
     void Start()
     {
         ClearBoard();
+        UpdateScoreText();
         Render();
     }
 
@@ -145,6 +150,76 @@ public class Board : MonoBehaviour
         }
         ClearPreview();
         Render();
+        CheckLines();
+    }
+
+    private void CheckLines()
+    {
+        List<int> fullRows = new List<int>();
+        List<int> fullCols = new List<int>();
+
+        // Check rows
+        for (int y = 0; y < 8; y++)
+        {
+            bool isFull = true;
+            for (int x = 0; x < 8; x++)
+            {
+                if (grid[y, x] == CellType.Empty)
+                {
+                    isFull = false;
+                    break;
+                }
+            }
+            if (isFull) fullRows.Add(y);
+        }
+
+        // Check columns
+        for (int x = 0; x < 8; x++)
+        {
+            bool isFull = true;
+            for (int y = 0; y < 8; y++)
+            {
+                if (grid[y, x] == CellType.Empty)
+                {
+                    isFull = false;
+                    break;
+                }
+            }
+            if (isFull) fullCols.Add(x);
+        }
+
+        // Clear rows
+        foreach (int y in fullRows)
+        {
+            for (int x = 0; x < 8; x++)
+            {
+                grid[y, x] = CellType.Empty;
+            }
+        }
+
+        // Clear columns
+        foreach (int x in fullCols)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                grid[y, x] = CellType.Empty;
+            }
+        }
+
+        if (fullRows.Count > 0 || fullCols.Count > 0)
+        {
+            score += (fullRows.Count + fullCols.Count) * 8;
+            UpdateScoreText();
+            Render();
+        }
+    }
+
+    private void UpdateScoreText()
+    {
+        if (scoreText != null)
+        {
+            scoreText.text = $"{score} puntos";
+        }
     }
 
     public void Render()
