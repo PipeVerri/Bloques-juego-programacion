@@ -175,7 +175,7 @@ public class Piece : MonoBehaviour,
             transform.position;
         
         // Hide original while dragging
-        GetComponent<CanvasGroup>().alpha = 0f;
+        GetComponent<CanvasGroup>().alpha = 0f; 
     }
 
     public void OnDrag(PointerEventData eventData)
