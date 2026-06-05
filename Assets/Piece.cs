@@ -22,66 +22,50 @@ public class Piece : MonoBehaviour,
     // static shares it accross instances, readonly stops me from accidental edits
     List<int[,]> Shapes = new() {
         // I
-        new int[,]
-        {
-            {0,0,0,0},
-            {1,1,1,1},
-            {0,0,0,0},
-            {0,0,0,0}
-        },
+        new int[,] { {1,1,1,1} },
 
         // O
         new int[,]
         {
-            {0,1,1,0},
-            {0,1,1,0},
-            {0,0,0,0},
-            {0,0,0,0}
+            {1,1},
+            {1,1}
         },
 
         // T
         new int[,]
         {
-            {0,1,0,0},
-            {1,1,1,0},
-            {0,0,0,0},
-            {0,0,0,0}
+            {0,1,0},
+            {1,1,1}
         },
 
         // L
         new int[,]
         {
-            {1,0,0,0},
-            {1,0,0,0},
-            {1,1,0,0},
-            {0,0,0,0}
+            {1,0},
+            {1,0},
+            {1,1}
         },
 
         // J
         new int[,]
         {
-            {0,1,0,0},
-            {0,1,0,0},
-            {1,1,0,0},
-            {0,0,0,0}
+            {0,1},
+            {0,1},
+            {1,1}
         },
 
         // S
         new int[,]
         {
-            {0,1,1,0},
-            {1,1,0,0},
-            {0,0,0,0},
-            {0,0,0,0}
+            {0,1,1},
+            {1,1,0}
         },
 
         // Z
         new int[,]
         {
-            {1,1,0,0},
-            {0,1,1,0},
-            {0,0,0,0},
-            {0,0,0,0}
+            {1,1,0},
+            {0,1,1}
         }
     };
 
@@ -128,23 +112,36 @@ public class Piece : MonoBehaviour,
         else if (sprite.name.Contains("blue")) currentType = Board.CellType.Blue;
         else currentType = Board.CellType.Empty;
 
-        for (int y = 0; y < 4; y++)
+        int rows = shape.GetLength(0);
+        int cols = shape.GetLength(1);
+
+        // Calculate how to center the minimal shape in a 4x4 visual grid
+        int startX = (4 - cols) / 2;
+        int startY = (4 - rows) / 2;
+
+        // Reset all 16 children first
+        for (int i = 0; i < transform.childCount; i++)
         {
-            for (int x = 0; x < 4; x++)
+            transform.GetChild(i).GetComponent<Image>().enabled = false;
+        }
+
+        // Map the minimal shape to the 4x4 grid of children
+        for (int y = 0; y < rows; y++)
+        {
+            for (int x = 0; x < cols; x++)
             {
-                int index = y * 4 + x;
-                Transform block = transform.GetChild(index);
-                Image image = block.GetComponent<Image>();
-                bool occupied = shape[y, x] == 1;
-                
-                if (occupied)
+                if (shape[y, x] == 1)
                 {
-                    image.sprite = sprite;
-                    image.enabled = true;
-                }
-                else
-                {
-                    image.enabled = false;
+                    int visualX = startX + x;
+                    int visualY = startY + y;
+                    int index = visualY * 4 + visualX;
+
+                    if (index >= 0 && index < transform.childCount)
+                    {
+                        Image image = transform.GetChild(index).GetComponent<Image>();
+                        image.sprite = sprite;
+                        image.enabled = true;
+                    }
                 }
             }
         }

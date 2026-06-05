@@ -69,24 +69,23 @@ public class Board : MonoBehaviour
 
     public bool IsValidPlacement(int[,] shape, int startX, int startY)
     {
-        // Adjust start position to center the 4x4 piece on the mouse
-        startX -= 2;
-        startY -= 2;
+        int rows = shape.GetLength(0);
+        int cols = shape.GetLength(1);
 
-        for (int py = 0; py < 4; py++)
+        // Center the piece matrix on the mouse position
+        startX -= cols / 2;
+        startY -= rows / 2;
+
+        for (int py = 0; py < rows; py++)
         {
-            for (int px = 0; px < 4; px++)
+            for (int px = 0; px < cols; px++)
             {
-                // Only check cells that are actually part of the shape
                 if (shape[py, px] == 0) continue;
 
                 int gx = startX + px;
                 int gy = startY + py;
 
-                // If an occupied part of the shape is outside the 8x8 grid, it's invalid
                 if (gx < 0 || gx >= 8 || gy < 0 || gy >= 8) return false;
-                
-                // If the grid is already occupied at that spot, it's invalid
                 if (grid[gy, gx] != CellType.Empty) return false;
             }
         }
@@ -97,19 +96,21 @@ public class Board : MonoBehaviour
     {
         ClearPreview();
         
-        startX -= 2;
-        startY -= 2;
+        int rows = shape.GetLength(0);
+        int cols = shape.GetLength(1);
 
-        for (int py = 0; py < 4; py++)
+        startX -= cols / 2;
+        startY -= rows / 2;
+
+        for (int py = 0; py < rows; py++)
         {
-            for (int px = 0; px < 4; px++)
+            for (int px = 0; px < cols; px++)
             {
                 if (shape[py, px] == 0) continue;
 
                 int gx = startX + px;
                 int gy = startY + py;
 
-                // Only render preview for parts of the shape that fall inside the grid
                 if (gx >= 0 && gx < 8 && gy >= 0 && gy < 8)
                 {
                     previewGrid[gy, gx] = type;
@@ -121,19 +122,21 @@ public class Board : MonoBehaviour
 
     public void PlacePiece(int[,] shape, int startX, int startY, CellType type)
     {
-        startX -= 2;
-        startY -= 2;
+        int rows = shape.GetLength(0);
+        int cols = shape.GetLength(1);
 
-        for (int py = 0; py < 4; py++)
+        startX -= cols / 2;
+        startY -= rows / 2;
+
+        for (int py = 0; py < rows; py++)
         {
-            for (int px = 0; px < 4; px++)
+            for (int px = 0; px < cols; px++)
             {
                 if (shape[py, px] == 0) continue;
 
                 int gx = startX + px;
                 int gy = startY + py;
 
-                // Only place parts of the shape that are within the grid
                 if (gx >= 0 && gx < 8 && gy >= 0 && gy < 8)
                 {
                     grid[gy, gx] = type;
