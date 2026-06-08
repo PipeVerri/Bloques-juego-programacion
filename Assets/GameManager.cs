@@ -13,7 +13,7 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        if (gameOverPanel != null) gameOverPanel.SetActive(false);
+        gameOverPanel.SetActive(false);
 
         foreach (Piece piece in pieces)
         {
@@ -44,17 +44,12 @@ public class GameManager : MonoBehaviour
 
     public void ResetGame()
     {
-        if (gameOverPanel != null) gameOverPanel.SetActive(false);
-
+        gameOverPanel.SetActive(false);
         foreach (Piece piece in pieces)
         {
             piece.SetRandomShape();
         }
-
-        if (board != null)
-        {
-            board.ClearBoard();
-        }
+        board.ClearBoard();
     }
 
     public void CheckGameOver()
@@ -78,6 +73,6 @@ public class GameManager : MonoBehaviour
         }
 
         // If we reach here, no piece can be placed
-        if (gameOverPanel != null) gameOverPanel.SetActive(true);
+        gameOverPanel.SetActive(true);
     }
 }

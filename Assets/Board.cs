@@ -50,13 +50,11 @@ public class Board : MonoBehaviour
                 previewGrid[y, x] = CellType.Empty;
     }
 
-    public bool GetGridPosition(Vector2 screenPoint, out int gridX, out int gridY)
+    public Vector2Int GetGridPosition(Vector2 screenPoint)
     {
-        gridX = -1;
-        gridY = -1;
-
+        // Rect, screenPoint, camera(null for overlay), out localPoint
         if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPoint, null, out Vector2 localPoint))
-            return false;
+            return new Vector2Int(-1, -1);
 
         float width = rectTransform.rect.width;
         float height = rectTransform.rect.height;
@@ -65,12 +63,12 @@ public class Board : MonoBehaviour
         float ny = (localPoint.y - rectTransform.rect.min.y) / height;
 
         if (nx < 0 || nx >= 1 || ny < 0 || ny >= 1)
-            return false;
+            return new Vector2Int(-1, -1);
 
-        gridX = Mathf.FloorToInt(nx * 8);
-        gridY = 7 - Mathf.FloorToInt(ny * 8); 
+        int gridX = Mathf.FloorToInt(nx * 8);
+        int gridY = 7 - Mathf.FloorToInt(ny * 8); 
 
-        return true;
+        return new Vector2Int(gridX, gridY);
     }
 
     public bool IsValidPlacement(int[,] shape, int startX, int startY)
@@ -137,14 +135,9 @@ public class Board : MonoBehaviour
         {
             for (int px = 0; px < cols; px++)
             {
-                if (shape[py, px] == 0) continue;
-
-                int gx = startX + px;
-                int gy = startY + py;
-
-                if (gx >= 0 && gx < 8 && gy >= 0 && gy < 8)
+                if (shape[py, px] != 0)
                 {
-                    grid[gy, gx] = type;
+                    grid[startY + py, startX + px] = type;
                 }
             }
         }
@@ -226,7 +219,6 @@ public class Board : MonoBehaviour
             for (int x = 0; x < 8; x++)
             {
                 int index = y * 8 + x;
-                if (index >= transform.childCount) continue;
 
                 Transform cellTransform = transform.GetChild(index);
                 Image image = cellTransform.GetComponent<Image>();

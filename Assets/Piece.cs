@@ -6,8 +6,15 @@ using UnityEngine.EventSystems;
 public class Piece : MonoBehaviour, 
     IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    [SerializeField] List<Sprite> sprites;
-    List<int> rotationAngles = new() { 0, 90, 180, 270 };
+    [System.Serializable]
+    public struct PieceData
+    {
+        public Sprite sprite;
+        public Board.CellType type;
+    }
+
+    [SerializeField] List<PieceData> pieceDataList;
+    List<int> rotationAngles = new() { 0, 1, 2, 3 };
 
     int[,] currentShape;
     Sprite currentSprite;
@@ -66,17 +73,15 @@ public class Piece : MonoBehaviour,
         }
     };
 
-    int[,] Rotate(int[,] shape, int degrees)
+    int[,] Rotate(int[,] shape, int rotation)
     {
-        degrees = ((degrees % 360) + 360) % 360;
-
-        return degrees switch
+        return (rotation % 4) switch
         {
             0 => (int[,])shape.Clone(),
-            90 => Rotate90(shape),
-            180 => Rotate90(Rotate90(shape)),
-            270 => Rotate90(Rotate90(Rotate90(shape))),
-            _ => throw new System.ArgumentException("Degrees must be a multiple of 90")
+            1 => Rotate90(shape),
+            2 => Rotate90(Rotate90(shape)),
+            3 => Rotate90(Rotate90(Rotate90(shape))),
+            _ => (int[,])shape.Clone()
         };
     }
 
@@ -98,15 +103,11 @@ public class Piece : MonoBehaviour,
         return rotated;
     }
 
-    private void ApplyShape(int[,] shape, Sprite sprite)
+    private void ApplyShape(int[,] shape, Sprite sprite, Board.CellType type)
     {
         currentShape = shape;
         currentSprite = sprite;
-
-        if (sprite.name.Contains("red")) currentType = Board.CellType.Red;
-        else if (sprite.name.Contains("green")) currentType = Board.CellType.Green;
-        else if (sprite.name.Contains("blue")) currentType = Board.CellType.Blue;
-        else currentType = Board.CellType.Empty;
+        currentType = type;
 
         int rows = shape.GetLength(0);
         int cols = shape.GetLength(1);
@@ -151,7 +152,9 @@ public class Piece : MonoBehaviour,
         int[,] shape = Shapes[Random.Range(0, Shapes.Count)];
         int random_angle = rotationAngles[Random.Range(0, rotationAngles.Count)];
         shape = Rotate(shape, random_angle);
-        ApplyShape(shape, sprites[Random.Range(0, sprites.Count)]);
+
+        PieceData data = pieceDataList[Random.Range(0, pieceDataList.Count)];
+        ApplyShape(shape, data.sprite, data.type);
     }
 
     Piece dragClone;
@@ -175,11 +178,12 @@ public class Piece : MonoBehaviour,
         {
             dragClone.transform.position = eventData.position;
 
-            if (board != null && board.GetGridPosition(eventData.position, out int gx, out int gy))
+            Vector2Int pos = board != null ? board.GetGridPosition(eventData.position) : new Vector2Int(-1, -1);
+            if (pos.x != -1)
             {
-                if (board.IsValidPlacement(currentShape, gx, gy))
+                if (board.IsValidPlacement(currentShape, pos.x, pos.y))
                 {
-                    board.ShowPreview(currentShape, gx, gy, currentType);
+                    board.ShowPreview(currentShape, pos.x, pos.y, currentType);
                     dragClone.GetComponent<CanvasGroup>().alpha = 0.5f;
                 }
                 else
@@ -206,11 +210,12 @@ public class Piece : MonoBehaviour,
         bool placed = false;
         if (dragClone != null)
         {
-            if (board != null && board.GetGridPosition(eventData.position, out int gx, out int gy))
+            Vector2Int pos = board != null ? board.GetGridPosition(eventData.position) : new Vector2Int(-1, -1);
+            if (pos.x != -1)
             {
-                if (board.IsValidPlacement(currentShape, gx, gy))
+                if (board.IsValidPlacement(currentShape, pos.x, pos.y))
                 {
-                    board.PlacePiece(currentShape, gx, gy, currentType);
+                    board.PlacePiece(currentShape, pos.x, pos.y, currentType);
                     placed = true;
                 }
             }
